@@ -1,4 +1,4 @@
-# playwright-runner-lm-reporter
+# 🎭 playwright-runner-lm-reporter
 
 Real-time HTML reporter for [Playwright](https://playwright.dev/) test runs. Available in two modes:
 
