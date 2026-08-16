@@ -10,3 +10,6 @@ playwright-report/
 **/playwright-report/
 /.analytics/
 **/.analytics/
+**/screenshots/
+**/videos/
+**/traces/
