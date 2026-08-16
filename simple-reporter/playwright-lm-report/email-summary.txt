@@ -2,7 +2,7 @@ Simple Reporter — Login/Logout Demo
 playwright-runner-lm-reporter simple demo
 
 Status: FAILED
-Run ID: 20260816_171550
+Run ID: 20260816_175524
 Environment: LOCAL
 Passed: 1
 Failed: 1
@@ -10,7 +10,7 @@ Skipped: 0
 Total: 2
 Pass Rate: 50.0%
 Duration: 14s
-Started: 2026-08-16T11:45:50.647Z
+Started: 2026-08-16T12:25:24.776Z
 
 Open report: playwright-lm-report/index.html
 Latest copy: playwright-lm-report/latest.html
