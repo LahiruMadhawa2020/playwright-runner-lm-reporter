@@ -1,0 +1,20 @@
+Advanced Reporter — Login/Logout Demo
+playwright-runner-lm-reporter advanced demo
+
+Status: FAILED
+Run ID: 20260816_170146
+Environment: LOCAL
+Passed: 1
+Failed: 1
+Skipped: 0
+Total: 2
+Pass Rate: 50.0%
+Duration: 12s
+Started: 2026-08-16T11:31:46.798Z
+
+Open report: playwright-lm-report/index.html
+Latest copy: playwright-lm-report/latest.html
+
+Failed tests:
+- auth.spec.ts › OrangeHRM Authentication @smoke › Logout should fail - asserting wrong element @regression
+  Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed

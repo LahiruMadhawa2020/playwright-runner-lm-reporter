@@ -406,19 +406,36 @@ Add generated folders to `.gitignore`:
 /.analytics/
 ```
 
-## Example project
+## Live demos
+
+View the generated HTML reports hosted on GitHub Pages:
+
+- **[Simple Reporter Demo](https://LahiruMadhawa2020.github.io/playwright-runner-lm-reporter/simple-reporter/playwright-lm-report/index.html)** — compact dashboard table with expandable rows
+- **[Advanced Reporter Demo](https://LahiruMadhawa2020.github.io/playwright-runner-lm-reporter/advanced-reporter/playwright-lm-report/index.html)** — split-view drill-down with nested step trees
+
+Both demos run login/logout tests against the [OrangeHRM demo application](https://opensource-demo.orangehrmlive.com/web/index.php/auth/login) with one passing and one failing test case.
+
+## Example projects
+
+### Simple reporter
 
 ```bash
-npm install
-npm run build
-cd example
+cd simple-reporter
 npm install
 npx playwright test
 ```
 
-Then open `example/playwright-lm-report/index.html`.
+Then open `simple-reporter/playwright-lm-report/index.html`.
 
-For Jenkins, see `example/Jenkinsfile`.
+### Advanced reporter
+
+```bash
+cd advanced-reporter
+npm install
+npx playwright test
+```
+
+Then open `advanced-reporter/playwright-lm-report/index.html`.
 
 ## Development
 

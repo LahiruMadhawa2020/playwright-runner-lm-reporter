@@ -1,0 +1,1434 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>Advanced Reporter — Login/Logout Demo</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+        
+        :root, [data-theme="light"] {
+            --bg: #eef4f1;
+            --panel: #ffffff;
+            --panel-muted: #f8fafc;
+            --border: #dbe3ef;
+            --text: #1e293b;
+            --muted: #64748b;
+            --primary: #059669;
+            --primary-light: #10b981;
+            --primary-bg: #ecfdf5;
+            --danger: #dc2626;
+            --passed: #16a34a;
+            --failed: #dc2626;
+            --skipped: #64748b;
+            --shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+            --hero-gradient: linear-gradient(135deg, #059669 0%, #0d9488 50%, #047857 100%);
+            --page-gradient: linear-gradient(180deg, #f8fafc 0%, var(--bg) 100%);
+            --code-bg: #0f172a;
+            --code-text: #cbd5e1;
+            --error-bg: #fee2e2;
+            --error-text: #991b1b;
+            --failed-row-bg: #fef2f2;
+        }
+        [data-theme="dark"] {
+            --bg: #0b1220;
+            --panel: #1e293b;
+            --panel-muted: #111827;
+            --border: #334155;
+            --text: #f1f5f9;
+            --muted: #94a3b8;
+            --primary: #34d399;
+            --primary-light: #6ee7b7;
+            --primary-bg: #064e3b;
+            --danger: #f87171;
+            --passed: #4ade80;
+            --failed: #f87171;
+            --skipped: #94a3b8;
+            --shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+            --hero-gradient: linear-gradient(135deg, #047857 0%, #0f766e 50%, #065f46 100%);
+            --page-gradient: linear-gradient(180deg, #0f172a 0%, #0b1220 100%);
+            --code-bg: #020617;
+            --code-text: #cbd5e1;
+            --error-bg: #450a0a;
+            --error-text: #fecaca;
+            --failed-row-bg: #3f1d1d;
+        }
+    
+        
+        body { background: var(--page-gradient); color: var(--text); }
+        .hero-header { background: var(--hero-gradient); }
+        .stat-card, .filters-panel, .meta-section, .sidebar, .detail-pane, .artifact-card, .pw-step-row {
+            background: var(--panel);
+            color: var(--text);
+        }
+        .pw-step-body, .detail-meta-grid div, .filter-group label {
+            background: var(--panel-muted);
+            color: var(--text);
+        }
+        .pw-step-row.failed { background: var(--failed-row-bg); }
+        .pw-step-console, .error-box pre, .pw-step-stack {
+            background: var(--code-bg);
+            color: var(--code-text);
+        }
+        .pw-step-error, .error-box pre {
+            background: var(--error-bg);
+            color: var(--error-text);
+        }
+        .sidebar-test:hover, .sidebar-test.active { background: var(--primary-bg); }
+        .browser-badge { background: var(--panel-muted); color: var(--text); border-color: var(--border); }
+        .btn-secondary { background: var(--panel-muted); color: var(--text); }
+    
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: Inter, Segoe UI, sans-serif;
+        }
+        .hero-header {
+            color: white;
+            padding: 34px 28px;
+            box-shadow: var(--shadow);
+        }
+        .hero-header h1 { margin: 0 0 8px; font-size: 32px; }
+        .hero-header p { margin: 0; opacity: 0.92; font-size: 16px; }
+        .dashboard-row {
+            display: grid;
+            grid-template-columns: 1fr 280px;
+            gap: 20px;
+            padding: 24px 28px 0;
+            align-items: stretch;
+        }
+        .stats-dashboard {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(120px, 1fr));
+            gap: 16px;
+        }
+        .stat-card {
+            border-radius: 16px;
+            padding: 22px 20px;
+            box-shadow: var(--shadow);
+            border-left: 5px solid var(--primary);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 16px 30px rgba(15, 23, 42, 0.12); }
+        .stat-card.passed { border-left-color: var(--passed); }
+        .stat-card.failed { border-left-color: var(--failed); }
+        .stat-card.skipped { border-left-color: var(--skipped); }
+        .stat-card.accent { border-left-color: #2563eb; }
+        .stat-card.duration { border-left-color: #7c3aed; }
+        .stat-value {
+            font-size: 34px;
+            font-weight: 700;
+            line-height: 1;
+            color: var(--text);
+        }
+        .stat-label {
+            margin-top: 10px;
+            font-size: 12px;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: var(--muted);
+            font-weight: 600;
+        }
+        .filters-panel {
+            border-radius: 16px;
+            padding: 18px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+        .filters-title {
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--muted);
+            margin-bottom: 14px;
+        }
+        .filters-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .filter-group {
+            flex: 1 1 0;
+            min-width: 0;
+        }
+        .filter-group strong {
+            display: block;
+            font-size: 11px;
+            color: var(--muted);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .filter-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .filter-group label {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 9px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            border: 1px solid transparent;
+            white-space: nowrap;
+        }
+        .filter-group label:hover { border-color: #bbf7d0; }
+        .filter-group input[type="checkbox"] { accent-color: var(--primary); }
+        .meta-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 18px;
+            margin: 20px 28px 0;
+            padding: 18px 22px;
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+        .meta-item { display: flex; align-items: center; gap: 10px; }
+        .meta-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--muted);
+            font-weight: 700;
+        }
+        .meta-value { font-weight: 600; color: var(--text); }
+        .run-id { font-family: "JetBrains Mono", monospace; font-size: 12px; }
+        .env-badge, .browser-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 14px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .env-badge {
+            background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+            color: white;
+        }
+        .browser-badge {
+            background: #f1f5f9;
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+        .app-layout {
+            display: grid;
+            grid-template-columns: 360px 1fr;
+            gap: 0;
+            min-height: calc(100vh - 420px);
+            margin-top: 20px;
+        }
+        .sidebar {
+            border-top: 1px solid var(--border);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar-toolbar {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+        .sidebar-toolbar input, .step-filter {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 14px;
+        }
+        .sidebar-content { overflow: auto; padding: 8px; }
+        .sidebar-file { margin-bottom: 16px; }
+        .sidebar-file-title {
+            padding: 8px 12px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--muted);
+            font-weight: 700;
+        }
+        .sidebar-test {
+            width: 100%;
+            display: grid;
+            grid-template-columns: 12px 1fr auto;
+            gap: 10px;
+            align-items: center;
+            padding: 12px;
+            border: none;
+            background: transparent;
+            text-align: left;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+        .sidebar-test:hover, .sidebar-test.active { background: var(--primary-bg); }
+        .sidebar-test-status {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--skipped);
+        }
+        .sidebar-test.passed .sidebar-test-status { background: var(--passed); }
+        .sidebar-test.failed .sidebar-test-status { background: var(--failed); }
+        .sidebar-test-title { font-size: 14px; font-weight: 600; }
+        .sidebar-test-duration { font-size: 12px; color: var(--muted); }
+        .detail-pane {
+            border-top: 1px solid var(--border);
+            padding: 24px 28px;
+            overflow: auto;
+        }
+        .empty-state { color: var(--muted); padding: 48px 12px; }
+        .detail-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+        .detail-breadcrumb { color: var(--muted); font-size: 13px; margin-bottom: 8px; }
+        .detail-title { margin: 0; font-size: 24px; }
+        .status-badge {
+            padding: 8px 14px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .status-badge.passed { background: #dcfce7; color: var(--passed); }
+        .status-badge.failed { background: #fee2e2; color: var(--failed); }
+        .status-badge.skipped { background: #e2e8f0; color: var(--skipped); }
+        .detail-meta-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .detail-meta-grid div {
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px;
+        }
+        .detail-meta-grid strong {
+            display: block;
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+        .detail-section {
+            margin-bottom: 28px;
+            padding-top: 8px;
+            border-top: 1px solid var(--border);
+        }
+        .detail-section h3 { margin: 0 0 14px; }
+        .section-heading {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+        .section-heading h3 { margin: 0; }
+        .pw-step-tree { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+        .pw-step { border-bottom: 1px solid var(--border); }
+        .pw-step:last-child { border-bottom: none; }
+        .pw-step-row {
+            display: grid;
+            grid-template-columns: 18px 18px 72px 1fr auto;
+            gap: 10px;
+            align-items: center;
+            padding: 12px 14px;
+        }
+        .pw-step-row.expandable { cursor: pointer; }
+        .pw-step-row.failed { background: #fef2f2; }
+        .pw-step-status.passed { color: var(--passed); }
+        .pw-step-status.failed { color: var(--failed); }
+        .pw-step-category {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+        .pw-step-title { font-size: 14px; font-weight: 500; }
+        .pw-step-duration { font-size: 12px; color: var(--muted); font-family: monospace; }
+        .pw-step-body { padding: 0 16px 16px 56px; }
+        .pw-step-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            font-size: 12px;
+            color: var(--muted);
+            margin-bottom: 12px;
+        }
+        .pw-step-console, .pw-step-error, .pw-step-stack, .pw-step-screenshot { margin-top: 12px; }
+        .pw-step-console-title { font-weight: 700; margin-bottom: 8px; }
+        .pw-console-line, .pw-step-stack, .error-box pre {
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .pw-step-console, .error-box pre, .pw-step-stack {
+            background: #0f172a;
+            color: #cbd5e1;
+            padding: 12px;
+            border-radius: 8px;
+        }
+        .pw-step-error {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 12px;
+            border-radius: 8px;
+        }
+        .pw-step-screenshot img, .detail-video, .artifact-card img {
+            max-width: 100%;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+        }
+        .artifact-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 16px;
+        }
+        .artifact-card {
+            display: block;
+            text-decoration: none;
+            color: inherit;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .artifact-card span {
+            display: block;
+            padding: 10px 12px;
+            font-size: 13px;
+        }
+        .trace-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
+        .btn {
+            border: none;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+        }
+        .btn-primary { background: var(--primary); color: #fff; }
+        .btn-secondary { background: #e2e8f0; color: var(--text); }
+        .trace-hint { color: var(--muted); font-size: 13px; }
+        .tag {
+            display: inline-block;
+            margin-right: 4px;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: var(--primary-bg);
+            color: var(--primary);
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .report-footer {
+            padding: 18px 28px;
+            color: var(--muted);
+            font-size: 13px;
+        }
+        @media (max-width: 1100px) {
+            .dashboard-row { grid-template-columns: 1fr; }
+            .stats-dashboard { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
+        }
+        @media (max-width: 960px) {
+            .app-layout { grid-template-columns: 1fr; }
+            .sidebar { border-right: none; max-height: 320px; }
+        }
+    </style>
+</head>
+<body>
+    <header class="hero-header">
+        <div class="hero-copy">
+            <h1>🎭 Advanced Reporter — Login/Logout Demo</h1>
+            <p>playwright-runner-lm-reporter advanced demo</p>
+        </div>
+    </header>
+
+    <section class="dashboard-row">
+        <div class="stats-dashboard">
+            <div class="stat-card">
+                <div class="stat-value">2</div>
+                <div class="stat-label">Total Tests</div>
+            </div>
+            <div class="stat-card passed">
+                <div class="stat-value">1</div>
+                <div class="stat-label">Passed</div>
+            </div>
+            <div class="stat-card failed">
+                <div class="stat-value">1</div>
+                <div class="stat-label">Failed</div>
+            </div>
+            <div class="stat-card skipped">
+                <div class="stat-value">0</div>
+                <div class="stat-label">Skipped</div>
+            </div>
+            <div class="stat-card accent">
+                <div class="stat-value">50.0%</div>
+                <div class="stat-label">Pass Rate</div>
+            </div>
+            <div class="stat-card duration">
+                <div class="stat-value">12s</div>
+                <div class="stat-label">Duration</div>
+            </div>
+        </div>
+
+        <aside class="filters-panel">
+            <div class="filters-title">Filters</div>
+            <div class="filters-row">
+                <div class="filter-group">
+                    <strong>Status</strong>
+                    <div class="filter-options">
+                        <label><input type="checkbox" class="status-filter" value="all" checked onchange="filterByStatus(this)"><span>All</span></label>
+                        <label><input type="checkbox" class="status-filter" value="passed" onchange="filterByStatus(this)"><span>Passed</span></label>
+                        <label><input type="checkbox" class="status-filter" value="failed" onchange="filterByStatus(this)"><span>Failed</span></label>
+                        <label><input type="checkbox" class="status-filter" value="skipped" onchange="filterByStatus(this)"><span>Skipped</span></label>
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <strong>Suite</strong>
+                    <div class="filter-options">
+                        <label><input type="checkbox" class="group-filter" value="all" checked onchange="filterByGroup(this)"><span>All</span></label>
+                        <label><input type="checkbox" class="group-filter" value="smoke" onchange="filterByGroup(this)"><span>Smoke</span></label>
+                        <label><input type="checkbox" class="group-filter" value="regression" onchange="filterByGroup(this)"><span>Regression</span></label>
+                        <label><input type="checkbox" class="group-filter" value="functional" onchange="filterByGroup(this)"><span>Functional</span></label>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </section>
+
+    <section class="meta-section">
+        <div class="meta-item">
+            <span class="meta-label">Environment</span>
+            <span class="env-badge">🌐 LOCAL</span>
+        </div>
+        <div class="meta-item">
+            <span class="meta-label">Browser</span>
+            <span class="browser-badge">🌍 chrome</span>
+        </div>
+        <div class="meta-item">
+            <span class="meta-label">Platform</span>
+            <span class="meta-value">Mac</span>
+        </div>
+        <div class="meta-item">
+            <span class="meta-label">Run ID</span>
+            <span class="meta-value run-id">20260816_170146</span>
+        </div>
+        <div class="meta-item">
+            <span class="meta-label">Started</span>
+            <span class="meta-value">Aug 16, 2026, 17:01:46</span>
+        </div>
+    </section>
+
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="sidebar-toolbar">
+                <input type="search" id="test-search" placeholder="Search tests..." oninput="applySidebarFilters()" />
+            </div>
+            <div class="sidebar-content" id="sidebar-content">
+                
+            <div class="sidebar-file" data-file="auth.spec.ts">
+                <div class="sidebar-file-title">auth.spec.ts</div>
+                
+                <button type="button"
+                    class="sidebar-test passed"
+                    data-test-id="test-d748ac400d08b85935ef-44a66ba4c4a455f76610"
+                    data-status="passed"
+                    data-tags="@functional @smoke login with valid credentials should succeed @functional auth.spec.ts › orangehrm authentication @smoke › login with valid credentials should succeed @functional auth.spec.ts orangehrm authentication @smoke"
+                    onclick="selectTest('test-d748ac400d08b85935ef-44a66ba4c4a455f76610')">
+                    <span class="sidebar-test-status"></span>
+                    <span class="sidebar-test-title">Login with valid credentials should succeed @functional</span>
+                    <span class="sidebar-test-duration">6s</span>
+                </button>
+                <button type="button"
+                    class="sidebar-test failed"
+                    data-test-id="test-d748ac400d08b85935ef-cad2e2355d69767e1a7c"
+                    data-status="failed"
+                    data-tags="@regression @smoke logout should fail - asserting wrong element @regression auth.spec.ts › orangehrm authentication @smoke › logout should fail - asserting wrong element @regression auth.spec.ts orangehrm authentication @smoke"
+                    onclick="selectTest('test-d748ac400d08b85935ef-cad2e2355d69767e1a7c')">
+                    <span class="sidebar-test-status"></span>
+                    <span class="sidebar-test-title">Logout should fail - asserting wrong element @regression</span>
+                    <span class="sidebar-test-duration">11s</span>
+                </button>
+            </div>
+            </div>
+        </aside>
+        <main class="detail-pane" id="detail-pane">
+            <div class="empty-state">
+                <h2>Select a test</h2>
+                <p>Choose a scenario from the left to drill into steps, attachments, and traces.</p>
+            </div>
+        </main>
+    </div>
+
+    
+        <template id="detail-template-test-d748ac400d08b85935ef-44a66ba4c4a455f76610">
+            
+        <div class="detail-header">
+            <div>
+                <div class="detail-breadcrumb">auth.spec.ts › OrangeHRM Authentication @smoke › Login with valid credentials should succeed @functional</div>
+                <h2 class="detail-title">Login with valid credentials should succeed @functional</h2>
+            </div>
+            <span class="status-badge passed">Passed</span>
+        </div>
+        <div class="detail-meta-grid">
+            <div><strong>File</strong><span>auth.spec.ts:5</span></div>
+            <div><strong>Duration</strong><span>6s</span></div>
+            <div><strong>Author</strong><span>Lahiru Madhawa</span></div>
+            <div><strong>Tags</strong><span><span class="tag">@functional</span> <span class="tag">@smoke</span></span></div>
+        </div>
+            <section class="detail-section">
+                <div class="section-heading">
+                    <h3>Test Steps</h3>
+                    <input type="search" class="step-filter" placeholder="Filter steps..." oninput="filterSteps(this.value)" />
+                </div>
+                <div class="pw-step-tree" id="step-tree">
+            <div class="pw-step" data-step-title="before hooks">
+                <div class="pw-step-row expandable passed" onclick="togglePwStep('step-0-0')">
+                    <span class="pw-step-expander">▶</span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">Hook</span>
+                    <span class="pw-step-title">Before Hooks</span>
+                    <span class="pw-step-duration">0s</span>
+                </div><div class="pw-step-body" id="step-0-0" style="display:none;">
+                <div class="pw-step-meta">
+                    <span>Started: 5:01:47 PM</span>
+                    <span>Duration: 0s</span>
+                    <span>Video: 0:00.01 - 0:00.63</span>
+                </div><div class="pw-step-children">
+            <div class="pw-step" data-step-title="fixture &quot;browser&quot;">
+                <div class="pw-step-row expandable passed" onclick="togglePwStep('step-1-1')">
+                    <span class="pw-step-expander">▶</span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">Fixture</span>
+                    <span class="pw-step-title">Fixture &quot;browser&quot;</span>
+                    <span class="pw-step-duration">0s</span>
+                </div><div class="pw-step-body" id="step-1-1" style="display:none;">
+                <div class="pw-step-meta">
+                    <span>Started: 5:01:47 PM</span>
+                    <span>Duration: 0s</span>
+                    <span>Video: 0:00.02 - 0:00.35</span>
+                </div><div class="pw-step-children">
+            <div class="pw-step" data-step-title="launch browser">
+                <div class="pw-step-row  passed" >
+                    <span class="pw-step-expander"></span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">API</span>
+                    <span class="pw-step-title">Launch browser</span>
+                    <span class="pw-step-duration">0s</span>
+                </div></div></div></div></div>
+            <div class="pw-step" data-step-title="fixture &quot;context&quot;">
+                <div class="pw-step-row expandable passed" onclick="togglePwStep('step-3-1')">
+                    <span class="pw-step-expander">▶</span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">Fixture</span>
+                    <span class="pw-step-title">Fixture &quot;context&quot;</span>
+                    <span class="pw-step-duration">0s</span>
+                </div><div class="pw-step-body" id="step-3-1" style="display:none;">
+                <div class="pw-step-meta">
+                    <span>Started: 5:01:47 PM</span>
+                    <span>Duration: 0s</span>
+                    <span>Video: 0:00.36 - 0:00.37</span>
+                </div><div class="pw-step-children">
+            <div class="pw-step" data-step-title="create context">
+                <div class="pw-step-row  passed" >
+                    <span class="pw-step-expander"></span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">API</span>
+                    <span class="pw-step-title">Create context</span>
+                    <span class="pw-step-duration">0s</span>
+                </div></div></div></div></div>
+            <div class="pw-step" data-step-title="fixture &quot;page&quot;">
+                <div class="pw-step-row expandable passed" onclick="togglePwStep('step-5-1')">
+                    <span class="pw-step-expander">▶</span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">Fixture</span>
+                    <span class="pw-step-title">Fixture &quot;page&quot;</span>
+                    <span class="pw-step-duration">0s</span>
+                </div><div class="pw-step-body" id="step-5-1" style="display:none;">
+                <div class="pw-step-meta">
+                    <span>Started: 5:01:47 PM</span>
+                    <span>Duration: 0s</span>
+                    <span>Video: 0:00.37 - 0:00.63</span>
+                </div><div class="pw-step-children">
+            <div class="pw-step" data-step-title="create page">
+                <div class="pw-step-row  passed" >
+                    <span class="pw-step-expander"></span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">API</span>
+                    <span class="pw-step-title">Create page</span>
+                    <span class="pw-step-duration">0s</span>
+                </div></div></div></div></div></div></div></div>
+            <div class="pw-step" data-step-title="navigate to login page">
+                <div class="pw-step-row expandable passed" onclick="togglePwStep('step-7-0')">
+                    <span class="pw-step-expander">▶</span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">Step</span>
+                    <span class="pw-step-title">Navigate to login page</span>
+                    <span class="pw-step-duration">3s</span>
+                </div><div class="pw-step-body" id="step-7-0" style="display:none;">
+                <div class="pw-step-meta">
+                    <span>Started: 5:01:47 PM</span>
+                    <span>Duration: 3s</span>
+                    <span>Video: 0:00.63 - 0:03.94</span>
+                </div><div class="pw-step-children">
+            <div class="pw-step" data-step-title="navigate to &quot;/web/index.php/auth/login&quot;">
+                <div class="pw-step-row  passed" >
+                    <span class="pw-step-expander"></span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">API</span>
+                    <span class="pw-step-title">Navigate to &quot;/web/index.php/auth/login&quot;</span>
+                    <span class="pw-step-duration">3s</span>
+                </div></div>
+            <div class="pw-step" data-step-title="expect &quot;tohaveurl&quot;">
+                <div class="pw-step-row  passed" >
+                    <span class="pw-step-expander"></span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">Expect</span>
+                    <span class="pw-step-title">Expect &quot;toHaveURL&quot;</span>
+                    <span class="pw-step-duration">0s</span>
+                </div></div></div></div></div>
+            <div class="pw-step" data-step-title="verify login form is visible">
+                <div class="pw-step-row expandable passed" onclick="togglePwStep('step-10-0')">
+                    <span class="pw-step-expander">▶</span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">Step</span>
+                    <span class="pw-step-title">Verify login form is visible</span>
+                    <span class="pw-step-duration">0s</span>
+                </div><div class="pw-step-body" id="step-10-0" style="display:none;">
+                <div class="pw-step-meta">
+                    <span>Started: 5:01:51 PM</span>
+                    <span>Duration: 0s</span>
+                    <span>Video: 0:03.94 - 0:04.25</span>
+                </div><div class="pw-step-children">
+            <div class="pw-step" data-step-title="expect &quot;tobevisible&quot; locator(&#039;input[name=&quot;username&quot;]&#039;)">
+                <div class="pw-step-row  passed" >
+                    <span class="pw-step-expander"></span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">Expect</span>
+                    <span class="pw-step-title">Expect &quot;toBeVisible&quot; locator(&#039;input[name=&quot;username&quot;]&#039;)</span>
+                    <span class="pw-step-duration">0s</span>
+                </div></div>
+            <div class="pw-step" data-step-title="expect &quot;tobevisible&quot; locator(&#039;input[name=&quot;password&quot;]&#039;)">
+                <div class="pw-step-row  passed" >
+                    <span class="pw-step-expander"></span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">Expect</span>
+                    <span class="pw-step-title">Expect &quot;toBeVisible&quot; locator(&#039;input[name=&quot;password&quot;]&#039;)</span>
+                    <span class="pw-step-duration">0s</span>
+                </div></div>
+            <div class="pw-step" data-step-title="expect &quot;tobevisible&quot; locator(&#039;button[type=&quot;submit&quot;]&#039;)">
+                <div class="pw-step-row  passed" >
+                    <span class="pw-step-expander"></span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">Expect</span>
+                    <span class="pw-step-title">Expect &quot;toBeVisible&quot; locator(&#039;button[type=&quot;submit&quot;]&#039;)</span>
+                    <span class="pw-step-duration">0s</span>
+                </div></div></div></div></div>
+            <div class="pw-step" data-step-title="enter credentials and submit">
+                <div class="pw-step-row expandable passed" onclick="togglePwStep('step-14-0')">
+                    <span class="pw-step-expander">▶</span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">Step</span>
+                    <span class="pw-step-title">Enter credentials and submit</span>
+                    <span class="pw-step-duration">0s</span>
+                </div><div class="pw-step-body" id="step-14-0" style="display:none;">
+                <div class="pw-step-meta">
+                    <span>Started: 5:01:51 PM</span>
+                    <span>Duration: 0s</span>
+                    <span>Video: 0:04.25 - 0:04.34</span>
+                </div><div class="pw-step-children">
+            <div class="pw-step" data-step-title="fill &quot;admin&quot; locator(&#039;input[name=&quot;username&quot;]&#039;)">
+                <div class="pw-step-row  passed" >
+                    <span class="pw-step-expander"></span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">API</span>
+                    <span class="pw-step-title">Fill &quot;Admin&quot; locator(&#039;input[name=&quot;username&quot;]&#039;)</span>
+                    <span class="pw-step-duration">0s</span>
+                </div></div>
+            <div class="pw-step" data-step-title="fill &quot;admin123&quot; locator(&#039;input[name=&quot;password&quot;]&#039;)">
+                <div class="pw-step-row  passed" >
+                    <span class="pw-step-expander"></span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">API</span>
+                    <span class="pw-step-title">Fill &quot;admin123&quot; locator(&#039;input[name=&quot;password&quot;]&#039;)</span>
+                    <span class="pw-step-duration">0s</span>
+                </div></div>
+            <div class="pw-step" data-step-title="click locator(&#039;button[type=&quot;submit&quot;]&#039;)">
+                <div class="pw-step-row  passed" >
+                    <span class="pw-step-expander"></span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">API</span>
+                    <span class="pw-step-title">Click locator(&#039;button[type=&quot;submit&quot;]&#039;)</span>
+                    <span class="pw-step-duration">0s</span>
+                </div></div></div></div></div>
+            <div class="pw-step" data-step-title="verify dashboard is displayed">
+                <div class="pw-step-row expandable passed" onclick="togglePwStep('step-18-0')">
+                    <span class="pw-step-expander">▶</span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">Step</span>
+                    <span class="pw-step-title">Verify dashboard is displayed</span>
+                    <span class="pw-step-duration">1s</span>
+                </div><div class="pw-step-body" id="step-18-0" style="display:none;">
+                <div class="pw-step-meta">
+                    <span>Started: 5:01:51 PM</span>
+                    <span>Duration: 1s</span>
+                    <span>Video: 0:04.34 - 0:06.21</span>
+                </div><div class="pw-step-children">
+            <div class="pw-step" data-step-title="expect &quot;tohaveurl&quot;">
+                <div class="pw-step-row  passed" >
+                    <span class="pw-step-expander"></span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">Expect</span>
+                    <span class="pw-step-title">Expect &quot;toHaveURL&quot;</span>
+                    <span class="pw-step-duration">1s</span>
+                </div></div>
+            <div class="pw-step" data-step-title="expect &quot;tobevisible&quot; locator(&#039;.oxd-topbar-header&#039;)">
+                <div class="pw-step-row  passed" >
+                    <span class="pw-step-expander"></span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">Expect</span>
+                    <span class="pw-step-title">Expect &quot;toBeVisible&quot; locator(&#039;.oxd-topbar-header&#039;)</span>
+                    <span class="pw-step-duration">0s</span>
+                </div></div>
+            <div class="pw-step" data-step-title="expect &quot;tobevisible&quot; getbyrole(&#039;heading&#039;, { name: &#039;dashboard&#039; })">
+                <div class="pw-step-row  passed" >
+                    <span class="pw-step-expander"></span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">Expect</span>
+                    <span class="pw-step-title">Expect &quot;toBeVisible&quot; getByRole(&#039;heading&#039;, { name: &#039;Dashboard&#039; })</span>
+                    <span class="pw-step-duration">0s</span>
+                </div></div></div></div></div>
+            <div class="pw-step" data-step-title="verify user is logged in">
+                <div class="pw-step-row expandable passed" onclick="togglePwStep('step-22-0')">
+                    <span class="pw-step-expander">▶</span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">Step</span>
+                    <span class="pw-step-title">Verify user is logged in</span>
+                    <span class="pw-step-duration">0s</span>
+                </div><div class="pw-step-body" id="step-22-0" style="display:none;">
+                <div class="pw-step-meta">
+                    <span>Started: 5:01:53 PM</span>
+                    <span>Duration: 0s</span>
+                    <span>Video: 0:06.21 - 0:06.22</span>
+                </div><div class="pw-step-children">
+            <div class="pw-step" data-step-title="expect &quot;tobevisible&quot; locator(&#039;.oxd-userdropdown&#039;)">
+                <div class="pw-step-row  passed" >
+                    <span class="pw-step-expander"></span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">Expect</span>
+                    <span class="pw-step-title">Expect &quot;toBeVisible&quot; locator(&#039;.oxd-userdropdown&#039;)</span>
+                    <span class="pw-step-duration">0s</span>
+                </div></div></div></div></div>
+            <div class="pw-step" data-step-title="after hooks">
+                <div class="pw-step-row expandable passed" onclick="togglePwStep('step-24-0')">
+                    <span class="pw-step-expander">▶</span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">Hook</span>
+                    <span class="pw-step-title">After Hooks</span>
+                    <span class="pw-step-duration">0s</span>
+                </div><div class="pw-step-body" id="step-24-0" style="display:none;">
+                <div class="pw-step-meta">
+                    <span>Started: 5:01:53 PM</span>
+                    <span>Duration: 0s</span>
+                    <span>Video: 0:06.22 - 0:06.42</span>
+                </div><div class="pw-step-children">
+            <div class="pw-step" data-step-title="fixture &quot;page&quot;">
+                <div class="pw-step-row  passed" >
+                    <span class="pw-step-expander"></span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">Fixture</span>
+                    <span class="pw-step-title">Fixture &quot;page&quot;</span>
+                    <span class="pw-step-duration">0s</span>
+                </div></div>
+            <div class="pw-step" data-step-title="fixture &quot;context&quot;">
+                <div class="pw-step-row expandable passed" onclick="togglePwStep('step-26-1')">
+                    <span class="pw-step-expander">▶</span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">Fixture</span>
+                    <span class="pw-step-title">Fixture &quot;context&quot;</span>
+                    <span class="pw-step-duration">0s</span>
+                </div><div class="pw-step-body" id="step-26-1" style="display:none;">
+                <div class="pw-step-meta">
+                    <span>Started: 5:01:53 PM</span>
+                    <span>Duration: 0s</span>
+                    <span>Video: 0:06.26 - 0:06.40</span>
+                </div><div class="pw-step-children">
+            <div class="pw-step" data-step-title="close context">
+                <div class="pw-step-row  passed" >
+                    <span class="pw-step-expander"></span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">API</span>
+                    <span class="pw-step-title">Close context</span>
+                    <span class="pw-step-duration">0s</span>
+                </div></div></div></div></div></div></div></div></div>
+            </section><section class="detail-section"><h3>Screenshots</h3><div class="artifact-grid">
+                <a class="artifact-card" href="screenshots/screenshot_2_1.png" target="_blank">
+                    <img src="screenshots/screenshot_2_1.png" alt="screenshot" />
+                    <span>screenshot</span>
+                </a></div></section>
+            <section class="detail-section">
+                <h3>Video</h3>
+                <video controls class="detail-video" src="videos/video_2.webm"></video>
+                <a href="videos/video_2.webm" target="_blank">Open video</a>
+            </section>
+            <section class="detail-section">
+                <h3>Trace</h3>
+                <div class="trace-actions">
+                    <a class="btn btn-primary" href="traces/trace_2.zip" download>Download Trace</a>
+                    <button class="btn btn-secondary" type="button" onclick="copyTraceCommand("npx playwright show-trace traces/trace_2.zip")">Copy CLI Command</button>
+                </div>
+                <p class="trace-hint">This report is fully static. Open traces locally with <code>npx playwright show-trace traces/trace_2.zip</code>.</p>
+            </section>
+        </template>
+        <template id="detail-template-test-d748ac400d08b85935ef-cad2e2355d69767e1a7c">
+            
+        <div class="detail-header">
+            <div>
+                <div class="detail-breadcrumb">auth.spec.ts › OrangeHRM Authentication @smoke › Logout should fail - asserting wrong element @regression</div>
+                <h2 class="detail-title">Logout should fail - asserting wrong element @regression</h2>
+            </div>
+            <span class="status-badge failed">Failed</span>
+        </div>
+        <div class="detail-meta-grid">
+            <div><strong>File</strong><span>auth.spec.ts:34</span></div>
+            <div><strong>Duration</strong><span>11s</span></div>
+            <div><strong>Author</strong><span>Lahiru Madhawa</span></div>
+            <div><strong>Tags</strong><span><span class="tag">@regression</span> <span class="tag">@smoke</span></span></div>
+        </div>
+            <section class="detail-section">
+                <h3>Errors</h3>
+                <div class="error-box">
+                    <pre>Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+Locator: locator(&#039;text=You have been successfully logged out. This element does not exist on the page.&#039;)
+Expected: visible
+Timeout: 5000ms
+Error: element(s) not found
+
+Call log:
+[2m  - Expect &quot;toBeVisible&quot; with timeout 5000ms[22m
+[2m  - waiting for locator(&#039;text=You have been successfully logged out. This element does not exist on the page.&#039;)[22m
+</pre>
+                    <details><summary>Call Stack</summary><pre>Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+Locator: locator(&#039;text=You have been successfully logged out. This element does not exist on the page.&#039;)
+Expected: visible
+Timeout: 5000ms
+Error: element(s) not found
+
+Call log:
+[2m  - Expect &quot;toBeVisible&quot; with timeout 5000ms[22m
+[2m  - waiting for locator(&#039;text=You have been successfully logged out. This element does not exist on the page.&#039;)[22m
+
+    at /Users/lahirumadhawa/NodeProjects/npm-reference-repos/playwright-runner-lm-reporter/advanced-reporter/tests/auth.spec.ts:58:122
+    at /Users/lahirumadhawa/NodeProjects/npm-reference-repos/playwright-runner-lm-reporter/advanced-reporter/tests/auth.spec.ts:55:5</pre></details>
+                </div>
+            </section>
+            <section class="detail-section">
+                <div class="section-heading">
+                    <h3>Test Steps</h3>
+                    <input type="search" class="step-filter" placeholder="Filter steps..." oninput="filterSteps(this.value)" />
+                </div>
+                <div class="pw-step-tree" id="step-tree">
+            <div class="pw-step" data-step-title="before hooks">
+                <div class="pw-step-row expandable passed" onclick="togglePwStep('step-0-0')">
+                    <span class="pw-step-expander">▶</span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">Hook</span>
+                    <span class="pw-step-title">Before Hooks</span>
+                    <span class="pw-step-duration">0s</span>
+                </div><div class="pw-step-body" id="step-0-0" style="display:none;">
+                <div class="pw-step-meta">
+                    <span>Started: 5:01:47 PM</span>
+                    <span>Duration: 0s</span>
+                    <span>Video: 0:00.01 - 0:00.63</span>
+                </div><div class="pw-step-children">
+            <div class="pw-step" data-step-title="fixture &quot;browser&quot;">
+                <div class="pw-step-row expandable passed" onclick="togglePwStep('step-1-1')">
+                    <span class="pw-step-expander">▶</span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">Fixture</span>
+                    <span class="pw-step-title">Fixture &quot;browser&quot;</span>
+                    <span class="pw-step-duration">0s</span>
+                </div><div class="pw-step-body" id="step-1-1" style="display:none;">
+                <div class="pw-step-meta">
+                    <span>Started: 5:01:47 PM</span>
+                    <span>Duration: 0s</span>
+                    <span>Video: 0:00.02 - 0:00.35</span>
+                </div><div class="pw-step-children">
+            <div class="pw-step" data-step-title="launch browser">
+                <div class="pw-step-row  passed" >
+                    <span class="pw-step-expander"></span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">API</span>
+                    <span class="pw-step-title">Launch browser</span>
+                    <span class="pw-step-duration">0s</span>
+                </div></div></div></div></div>
+            <div class="pw-step" data-step-title="fixture &quot;context&quot;">
+                <div class="pw-step-row expandable passed" onclick="togglePwStep('step-3-1')">
+                    <span class="pw-step-expander">▶</span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">Fixture</span>
+                    <span class="pw-step-title">Fixture &quot;context&quot;</span>
+                    <span class="pw-step-duration">0s</span>
+                </div><div class="pw-step-body" id="step-3-1" style="display:none;">
+                <div class="pw-step-meta">
+                    <span>Started: 5:01:47 PM</span>
+                    <span>Duration: 0s</span>
+                    <span>Video: 0:00.35 - 0:00.36</span>
+                </div><div class="pw-step-children">
+            <div class="pw-step" data-step-title="create context">
+                <div class="pw-step-row  passed" >
+                    <span class="pw-step-expander"></span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">API</span>
+                    <span class="pw-step-title">Create context</span>
+                    <span class="pw-step-duration">0s</span>
+                </div></div></div></div></div>
+            <div class="pw-step" data-step-title="fixture &quot;page&quot;">
+                <div class="pw-step-row expandable passed" onclick="togglePwStep('step-5-1')">
+                    <span class="pw-step-expander">▶</span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">Fixture</span>
+                    <span class="pw-step-title">Fixture &quot;page&quot;</span>
+                    <span class="pw-step-duration">0s</span>
+                </div><div class="pw-step-body" id="step-5-1" style="display:none;">
+                <div class="pw-step-meta">
+                    <span>Started: 5:01:47 PM</span>
+                    <span>Duration: 0s</span>
+                    <span>Video: 0:00.36 - 0:00.63</span>
+                </div><div class="pw-step-children">
+            <div class="pw-step" data-step-title="create page">
+                <div class="pw-step-row  passed" >
+                    <span class="pw-step-expander"></span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">API</span>
+                    <span class="pw-step-title">Create page</span>
+                    <span class="pw-step-duration">0s</span>
+                </div></div></div></div></div></div></div></div>
+            <div class="pw-step" data-step-title="navigate to login page">
+                <div class="pw-step-row expandable passed" onclick="togglePwStep('step-7-0')">
+                    <span class="pw-step-expander">▶</span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">Step</span>
+                    <span class="pw-step-title">Navigate to login page</span>
+                    <span class="pw-step-duration">2s</span>
+                </div><div class="pw-step-body" id="step-7-0" style="display:none;">
+                <div class="pw-step-meta">
+                    <span>Started: 5:01:47 PM</span>
+                    <span>Duration: 2s</span>
+                    <span>Video: 0:00.63 - 0:03.44</span>
+                </div><div class="pw-step-children">
+            <div class="pw-step" data-step-title="navigate to &quot;/web/index.php/auth/login&quot;">
+                <div class="pw-step-row  passed" >
+                    <span class="pw-step-expander"></span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">API</span>
+                    <span class="pw-step-title">Navigate to &quot;/web/index.php/auth/login&quot;</span>
+                    <span class="pw-step-duration">2s</span>
+                </div></div></div></div></div>
+            <div class="pw-step" data-step-title="login with valid credentials">
+                <div class="pw-step-row expandable passed" onclick="togglePwStep('step-9-0')">
+                    <span class="pw-step-expander">▶</span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">Step</span>
+                    <span class="pw-step-title">Login with valid credentials</span>
+                    <span class="pw-step-duration">1s</span>
+                </div><div class="pw-step-body" id="step-9-0" style="display:none;">
+                <div class="pw-step-meta">
+                    <span>Started: 5:01:50 PM</span>
+                    <span>Duration: 1s</span>
+                    <span>Video: 0:03.44 - 0:04.99</span>
+                </div><div class="pw-step-children">
+            <div class="pw-step" data-step-title="fill &quot;admin&quot; locator(&#039;input[name=&quot;username&quot;]&#039;)">
+                <div class="pw-step-row  passed" >
+                    <span class="pw-step-expander"></span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">API</span>
+                    <span class="pw-step-title">Fill &quot;Admin&quot; locator(&#039;input[name=&quot;username&quot;]&#039;)</span>
+                    <span class="pw-step-duration">0s</span>
+                </div></div>
+            <div class="pw-step" data-step-title="fill &quot;admin123&quot; locator(&#039;input[name=&quot;password&quot;]&#039;)">
+                <div class="pw-step-row  passed" >
+                    <span class="pw-step-expander"></span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">API</span>
+                    <span class="pw-step-title">Fill &quot;admin123&quot; locator(&#039;input[name=&quot;password&quot;]&#039;)</span>
+                    <span class="pw-step-duration">0s</span>
+                </div></div>
+            <div class="pw-step" data-step-title="click locator(&#039;button[type=&quot;submit&quot;]&#039;)">
+                <div class="pw-step-row  passed" >
+                    <span class="pw-step-expander"></span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">API</span>
+                    <span class="pw-step-title">Click locator(&#039;button[type=&quot;submit&quot;]&#039;)</span>
+                    <span class="pw-step-duration">1s</span>
+                </div></div>
+            <div class="pw-step" data-step-title="expect &quot;tohaveurl&quot;">
+                <div class="pw-step-row  passed" >
+                    <span class="pw-step-expander"></span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">Expect</span>
+                    <span class="pw-step-title">Expect &quot;toHaveURL&quot;</span>
+                    <span class="pw-step-duration">0s</span>
+                </div></div></div></div></div>
+            <div class="pw-step" data-step-title="click user dropdown menu">
+                <div class="pw-step-row expandable passed" onclick="togglePwStep('step-14-0')">
+                    <span class="pw-step-expander">▶</span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">Step</span>
+                    <span class="pw-step-title">Click user dropdown menu</span>
+                    <span class="pw-step-duration">0s</span>
+                </div><div class="pw-step-body" id="step-14-0" style="display:none;">
+                <div class="pw-step-meta">
+                    <span>Started: 5:01:52 PM</span>
+                    <span>Duration: 0s</span>
+                    <span>Video: 0:04.99 - 0:05.83</span>
+                </div><div class="pw-step-children">
+            <div class="pw-step" data-step-title="click locator(&#039;.oxd-userdropdown&#039;)">
+                <div class="pw-step-row  passed" >
+                    <span class="pw-step-expander"></span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">API</span>
+                    <span class="pw-step-title">Click locator(&#039;.oxd-userdropdown&#039;)</span>
+                    <span class="pw-step-duration">0s</span>
+                </div></div>
+            <div class="pw-step" data-step-title="expect &quot;tobevisible&quot; locator(&#039;.oxd-dropdown-menu&#039;)">
+                <div class="pw-step-row  passed" >
+                    <span class="pw-step-expander"></span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">Expect</span>
+                    <span class="pw-step-title">Expect &quot;toBeVisible&quot; locator(&#039;.oxd-dropdown-menu&#039;)</span>
+                    <span class="pw-step-duration">0s</span>
+                </div></div></div></div></div>
+            <div class="pw-step" data-step-title="click logout option">
+                <div class="pw-step-row expandable passed" onclick="togglePwStep('step-17-0')">
+                    <span class="pw-step-expander">▶</span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">Step</span>
+                    <span class="pw-step-title">Click logout option</span>
+                    <span class="pw-step-duration">1s</span>
+                </div><div class="pw-step-body" id="step-17-0" style="display:none;">
+                <div class="pw-step-meta">
+                    <span>Started: 5:01:52 PM</span>
+                    <span>Duration: 1s</span>
+                    <span>Video: 0:05.83 - 0:06.96</span>
+                </div><div class="pw-step-children">
+            <div class="pw-step" data-step-title="click locator(&#039;text=logout&#039;)">
+                <div class="pw-step-row  passed" >
+                    <span class="pw-step-expander"></span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">API</span>
+                    <span class="pw-step-title">Click locator(&#039;text=Logout&#039;)</span>
+                    <span class="pw-step-duration">1s</span>
+                </div></div></div></div></div>
+            <div class="pw-step" data-step-title="verify logout - this will fail intentionally">
+                <div class="pw-step-row expandable failed" onclick="togglePwStep('step-19-0')">
+                    <span class="pw-step-expander">▶</span>
+                    <span class="pw-step-status failed">✗</span>
+                    <span class="pw-step-category">Step</span>
+                    <span class="pw-step-title">Verify logout - this will fail intentionally</span>
+                    <span class="pw-step-duration">5s</span>
+                </div><div class="pw-step-body" id="step-19-0" style="display:none;">
+                <div class="pw-step-meta">
+                    <span>Started: 5:01:54 PM</span>
+                    <span>Duration: 5s</span>
+                    <span>Video: 0:06.96 - 0:11.98</span>
+                </div><div class="pw-step-error">Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+Locator: locator(&#039;text=You have been successfully logged out. This element does not exist on the page.&#039;)
+Expected: visible
+Timeout: 5000ms
+Error: element(s) not found
+
+Call log:
+[2m  - Expect &quot;toBeVisible&quot; with timeout 5000ms[22m
+[2m  - waiting for locator(&#039;text=You have been successfully logged out. This element does not exist on the page.&#039;)[22m
+</div><pre class="pw-step-stack">Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+Locator: locator(&#039;text=You have been successfully logged out. This element does not exist on the page.&#039;)
+Expected: visible
+Timeout: 5000ms
+Error: element(s) not found
+
+Call log:
+[2m  - Expect &quot;toBeVisible&quot; with timeout 5000ms[22m
+[2m  - waiting for locator(&#039;text=You have been successfully logged out. This element does not exist on the page.&#039;)[22m
+
+    at /Users/lahirumadhawa/NodeProjects/npm-reference-repos/playwright-runner-lm-reporter/advanced-reporter/tests/auth.spec.ts:58:122
+    at /Users/lahirumadhawa/NodeProjects/npm-reference-repos/playwright-runner-lm-reporter/advanced-reporter/tests/auth.spec.ts:55:5</pre><div class="pw-step-children">
+            <div class="pw-step" data-step-title="expect &quot;tohaveurl&quot;">
+                <div class="pw-step-row  passed" >
+                    <span class="pw-step-expander"></span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">Expect</span>
+                    <span class="pw-step-title">Expect &quot;toHaveURL&quot;</span>
+                    <span class="pw-step-duration">0s</span>
+                </div></div>
+            <div class="pw-step" data-step-title="expect &quot;tobevisible&quot; locator(&#039;text=you have been successfully logged out. this element does not exist on the page.&#039;)">
+                <div class="pw-step-row expandable failed" onclick="togglePwStep('step-21-1')">
+                    <span class="pw-step-expander">▶</span>
+                    <span class="pw-step-status failed">✗</span>
+                    <span class="pw-step-category">Expect</span>
+                    <span class="pw-step-title">Expect &quot;toBeVisible&quot; locator(&#039;text=You have been successfully logged out. This element does not exist on the page.&#039;)</span>
+                    <span class="pw-step-duration">5s</span>
+                </div><div class="pw-step-body" id="step-21-1" style="display:none;">
+                <div class="pw-step-meta">
+                    <span>Started: 5:01:54 PM</span>
+                    <span>Duration: 5s</span>
+                    <span>Video: 0:06.98 - 0:11.98</span>
+                </div><div class="pw-step-error">Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+Locator: locator(&#039;text=You have been successfully logged out. This element does not exist on the page.&#039;)
+Expected: visible
+Timeout: 5000ms
+Error: element(s) not found
+
+Call log:
+[2m  - Expect &quot;toBeVisible&quot; with timeout 5000ms[22m
+[2m  - waiting for locator(&#039;text=You have been successfully logged out. This element does not exist on the page.&#039;)[22m
+</div><pre class="pw-step-stack">Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+Locator: locator(&#039;text=You have been successfully logged out. This element does not exist on the page.&#039;)
+Expected: visible
+Timeout: 5000ms
+Error: element(s) not found
+
+Call log:
+[2m  - Expect &quot;toBeVisible&quot; with timeout 5000ms[22m
+[2m  - waiting for locator(&#039;text=You have been successfully logged out. This element does not exist on the page.&#039;)[22m
+
+    at /Users/lahirumadhawa/NodeProjects/npm-reference-repos/playwright-runner-lm-reporter/advanced-reporter/tests/auth.spec.ts:58:122
+    at /Users/lahirumadhawa/NodeProjects/npm-reference-repos/playwright-runner-lm-reporter/advanced-reporter/tests/auth.spec.ts:55:5</pre></div></div></div></div></div>
+            <div class="pw-step" data-step-title="after hooks">
+                <div class="pw-step-row expandable passed" onclick="togglePwStep('step-22-0')">
+                    <span class="pw-step-expander">▶</span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">Hook</span>
+                    <span class="pw-step-title">After Hooks</span>
+                    <span class="pw-step-duration">0s</span>
+                </div><div class="pw-step-body" id="step-22-0" style="display:none;">
+                <div class="pw-step-meta">
+                    <span>Started: 5:01:59 PM</span>
+                    <span>Duration: 0s</span>
+                    <span>Video: 0:11.98 - 0:12.20</span>
+                </div><div class="pw-step-children">
+            <div class="pw-step" data-step-title="fixture &quot;page&quot;">
+                <div class="pw-step-row  passed" >
+                    <span class="pw-step-expander"></span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">Fixture</span>
+                    <span class="pw-step-title">Fixture &quot;page&quot;</span>
+                    <span class="pw-step-duration">0s</span>
+                </div></div>
+            <div class="pw-step" data-step-title="fixture &quot;context&quot;">
+                <div class="pw-step-row expandable passed" onclick="togglePwStep('step-24-1')">
+                    <span class="pw-step-expander">▶</span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">Fixture</span>
+                    <span class="pw-step-title">Fixture &quot;context&quot;</span>
+                    <span class="pw-step-duration">0s</span>
+                </div><div class="pw-step-body" id="step-24-1" style="display:none;">
+                <div class="pw-step-meta">
+                    <span>Started: 5:01:59 PM</span>
+                    <span>Duration: 0s</span>
+                    <span>Video: 0:12.01 - 0:12.20</span>
+                </div><div class="pw-step-children">
+            <div class="pw-step" data-step-title="close context">
+                <div class="pw-step-row  passed" >
+                    <span class="pw-step-expander"></span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">API</span>
+                    <span class="pw-step-title">Close context</span>
+                    <span class="pw-step-duration">0s</span>
+                </div></div></div></div></div></div></div></div>
+            <div class="pw-step" data-step-title="worker cleanup">
+                <div class="pw-step-row expandable passed" onclick="togglePwStep('step-26-0')">
+                    <span class="pw-step-expander">▶</span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">Hook</span>
+                    <span class="pw-step-title">Worker Cleanup</span>
+                    <span class="pw-step-duration">0s</span>
+                </div><div class="pw-step-body" id="step-26-0" style="display:none;">
+                <div class="pw-step-meta">
+                    <span>Started: 5:01:59 PM</span>
+                    <span>Duration: 0s</span>
+                    <span>Video: 0:12.20 - 0:12.22</span>
+                </div><div class="pw-step-children">
+            <div class="pw-step" data-step-title="fixture &quot;browser&quot;">
+                <div class="pw-step-row  passed" >
+                    <span class="pw-step-expander"></span>
+                    <span class="pw-step-status passed">✓</span>
+                    <span class="pw-step-category">Fixture</span>
+                    <span class="pw-step-title">Fixture &quot;browser&quot;</span>
+                    <span class="pw-step-duration">0s</span>
+                </div></div></div></div></div></div>
+            </section><section class="detail-section"><h3>Screenshots</h3><div class="artifact-grid">
+                <a class="artifact-card" href="screenshots/screenshot_2_1.png" target="_blank">
+                    <img src="screenshots/screenshot_2_1.png" alt="screenshot" />
+                    <span>screenshot</span>
+                </a></div></section>
+            <section class="detail-section">
+                <h3>Video</h3>
+                <video controls class="detail-video" src="videos/video_2.webm"></video>
+                <a href="videos/video_2.webm" target="_blank">Open video</a>
+            </section>
+            <section class="detail-section">
+                <h3>Trace</h3>
+                <div class="trace-actions">
+                    <a class="btn btn-primary" href="traces/trace_2.zip" download>Download Trace</a>
+                    <button class="btn btn-secondary" type="button" onclick="copyTraceCommand("npx playwright show-trace traces/trace_2.zip")">Copy CLI Command</button>
+                </div>
+                <p class="trace-hint">This report is fully static. Open traces locally with <code>npx playwright show-trace traces/trace_2.zip</code>.</p>
+            </section>
+        </template>
+
+    <footer class="report-footer">
+        <p>Advanced TDD-LM Report | Fully static HTML — no server required</p>
+    </footer>
+
+    <script>
+        const reportData = {"tests":[{"id":"test-d748ac400d08b85935ef-44a66ba4c4a455f76610","title":"Login with valid credentials should succeed @functional","status":"passed","tags":"@functional @smoke login with valid credentials should succeed @functional auth.spec.ts › orangehrm authentication @smoke › login with valid credentials should succeed @functional auth.spec.ts orangehrm authentication @smoke","file":"/Users/lahirumadhawa/NodeProjects/npm-reference-repos/playwright-runner-lm-reporter/advanced-reporter/tests/auth.spec.ts"},{"id":"test-d748ac400d08b85935ef-cad2e2355d69767e1a7c","title":"Logout should fail - asserting wrong element @regression","status":"failed","tags":"@regression @smoke logout should fail - asserting wrong element @regression auth.spec.ts › orangehrm authentication @smoke › logout should fail - asserting wrong element @regression auth.spec.ts orangehrm authentication @smoke","file":"/Users/lahirumadhawa/NodeProjects/npm-reference-repos/playwright-runner-lm-reporter/advanced-reporter/tests/auth.spec.ts"}],"defaultTestId":"test-d748ac400d08b85935ef-cad2e2355d69767e1a7c"};
+        
+        function selectTest(testId, pushHash = true) {
+            const template = document.getElementById('detail-template-' + testId);
+            const pane = document.getElementById('detail-pane');
+            if (!template || !pane) return;
+
+            document.querySelectorAll('.sidebar-test').forEach((button) => {
+                button.classList.toggle('active', button.getAttribute('data-test-id') === testId);
+            });
+
+            pane.innerHTML = template.innerHTML;
+            if (pushHash) {
+                history.replaceState(null, '', '#?testId=' + encodeURIComponent(testId));
+            }
+        }
+
+        function filterByStatus(checkbox) {
+            const allCheckbox = document.querySelector('.status-filter[value="all"]');
+            if (checkbox.value === 'all') {
+                if (checkbox.checked) {
+                    document.querySelectorAll('.status-filter:not([value="all"])').forEach((item) => {
+                        item.checked = false;
+                    });
+                }
+            } else if (checkbox.checked && allCheckbox) {
+                allCheckbox.checked = false;
+                const anyChecked = document.querySelectorAll('.status-filter:not([value="all"]):checked').length > 0;
+                if (!anyChecked && allCheckbox) {
+                    allCheckbox.checked = true;
+                }
+            }
+            if (!checkbox.checked && checkbox.value !== 'all') {
+                const anyChecked = document.querySelectorAll('.status-filter:not([value="all"]):checked').length > 0;
+                if (!anyChecked && allCheckbox) {
+                    allCheckbox.checked = true;
+                }
+            }
+            applySidebarFilters();
+        }
+
+        function filterByGroup(checkbox) {
+            const allCheckbox = document.querySelector('.group-filter[value="all"]');
+            if (checkbox.value === 'all') {
+                if (checkbox.checked) {
+                    document.querySelectorAll('.group-filter:not([value="all"])').forEach((item) => {
+                        item.checked = false;
+                    });
+                }
+            } else if (checkbox.checked && allCheckbox) {
+                allCheckbox.checked = false;
+            }
+            if (!checkbox.checked && checkbox.value !== 'all') {
+                const anyChecked = document.querySelectorAll('.group-filter:not([value="all"]):checked').length > 0;
+                if (!anyChecked && allCheckbox) {
+                    allCheckbox.checked = true;
+                }
+            }
+            applySidebarFilters();
+        }
+
+        function applySidebarFilters() {
+            const searchQuery = document.getElementById('test-search')?.value.trim().toLowerCase() || '';
+            const statusAll = document.querySelector('.status-filter[value="all"]')?.checked;
+            const groupAll = document.querySelector('.group-filter[value="all"]')?.checked;
+            const statusFilters = Array.from(document.querySelectorAll('.status-filter:not([value="all"]):checked')).map((item) => item.value);
+            const groupFilters = Array.from(document.querySelectorAll('.group-filter:not([value="all"]):checked')).map((item) => item.value);
+
+            document.querySelectorAll('.sidebar-test').forEach((button) => {
+                const title = button.querySelector('.sidebar-test-title')?.textContent?.toLowerCase() || '';
+                const tags = button.getAttribute('data-tags') || '';
+                const status = button.getAttribute('data-status') || '';
+
+                const searchMatch = !searchQuery || title.includes(searchQuery) || tags.includes(searchQuery);
+                const statusMatch = statusAll || statusFilters.includes(status);
+                const groupMatch = groupAll || groupFilters.some((filterValue) => tags.includes(filterValue));
+
+                button.style.display = searchMatch && statusMatch && groupMatch ? '' : 'none';
+            });
+
+            document.querySelectorAll('.sidebar-file').forEach((fileGroup) => {
+                const visibleTests = fileGroup.querySelectorAll('.sidebar-test:not([style*="display: none"])').length
+                    || fileGroup.querySelectorAll('.sidebar-test').length && Array.from(fileGroup.querySelectorAll('.sidebar-test')).some((button) => button.style.display !== 'none');
+                fileGroup.style.display = visibleTests ? '' : 'none';
+            });
+        }
+
+        function filterSteps(query) {
+            const normalized = query.trim().toLowerCase();
+            document.querySelectorAll('.pw-step').forEach((step) => {
+                const title = step.getAttribute('data-step-title') || '';
+                step.style.display = !normalized || title.includes(normalized) ? '' : 'none';
+            });
+        }
+
+        function togglePwStep(stepId) {
+            const body = document.getElementById(stepId);
+            if (!body) return;
+            body.style.display = body.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function copyTraceCommand(command) {
+            navigator.clipboard.writeText(command).catch(() => {});
+        }
+
+        function readTestIdFromHash() {
+            const hash = window.location.hash.replace(/^#/, '');
+            if (!hash) return null;
+            const params = new URLSearchParams(hash.startsWith('?') ? hash.slice(1) : hash);
+            return params.get('testId');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const hashTestId = readTestIdFromHash();
+            const initialTestId = hashTestId || reportData.defaultTestId;
+            if (initialTestId) {
+                selectTest(initialTestId, false);
+            }
+            applySidebarFilters();
+        });
+
+        window.addEventListener('hashchange', () => {
+            const hashTestId = readTestIdFromHash();
+            if (hashTestId) {
+                selectTest(hashTestId, false);
+            }
+        });
+    
+    </script>
+</body>
+</html>

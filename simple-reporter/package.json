@@ -1,0 +1,14 @@
+{
+  "name": "simple-reporter-demo",
+  "version": "1.0.0",
+  "description": "Simple reporter demo using playwright-runner-lm-reporter",
+  "scripts": {
+    "test": "npx playwright test",
+    "test:headed": "npx playwright test --headed"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.52.0",
+    "@types/node": "^26.2.0",
+    "playwright-runner-lm-reporter": "latest"
+  }
+}
